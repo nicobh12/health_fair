@@ -1,9 +1,16 @@
-Health Fair v10 - clásico (Bayes sin log)
+Health Fair - Simulador de diagnóstico (versión actualizada)
 
-Instrucciones:
-- Python 3.8+
-- Instalar colorama (opcional): pip install colorama
-- Ejecutar: python main.py --debug
-Explicación corta:
-- P(S|E) = 0.8 si la enfermedad E tiene el síntoma S, 0.2 en caso contrario.
-- Cada respuesta (sí/no) actualiza las probabilidades con Bayes clásico usando probabilidad total.
+Instrucciones rápidas:
+
+1. Asegúrate de tener Python 3.8+ instalado.
+2. Instala pygame si no está instalado:
+
+   pip install pygame
+
+3. Ejecuta desde la carpeta del proyecto:
+   python main.py
+
+Notas:
+
+- Todos los cálculos probabilísticos se realizan en logic/probability_engine.py.
+- Después de preguntar por un síntoma, se recalculan (para todas) las probabilidades usando Bayes.
