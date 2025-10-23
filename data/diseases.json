@@ -1,101 +1,121 @@
 {
   "diseases": [
     {
-      "id": "RC",
-      "name": "Resfriado común",
-      "prior": 0.25,
-      "symptoms": [
-        "tos",
-        "estornudos",
-        "congestion",
-        "dolor_garganta"
-      ]
+      "id": "CC",
+      "name": "Cáncer de pulmón",
+      "prior": 0.03,
+      "symptom_likelihood": {
+        "cough": 0.8,
+        "fever": 0.15,
+        "sore_throat": 0.1,
+        "fatigue": 0.7,
+        "chest_pain": 0.6
+      },
+      "risk_factors": {
+        "fuma": 0.25
+      }
     },
     {
-      "id": "GR",
-      "name": "Gripe",
-      "prior": 0.2,
-      "symptoms": [
-        "tos",
-        "fiebre",
-        "dolor_cabeza",
-        "fatiga",
-        "dolor_garganta"
-      ]
-    },
-    {
-      "id": "AL",
-      "name": "Alergia",
-      "prior": 0.15,
-      "symptoms": [
-        "estornudos",
-        "ojos_picor",
-        "congestion",
-        "tos"
-      ]
+      "id": "NE",
+      "name": "Neumonía",
+      "prior": 0.07,
+      "symptom_likelihood": {
+        "cough": 0.9,
+        "fever": 0.8,
+        "fatigue": 0.7,
+        "shortness_breath": 0.6
+      },
+      "risk_factors": {
+        "fuma": 0.1
+      }
     },
     {
       "id": "BR",
       "name": "Bronquitis",
       "prior": 0.1,
-      "symptoms": [
-        "tos",
-        "fatiga",
-        "dolor_pecho"
-      ]
+      "symptom_likelihood": {
+        "cough": 0.8,
+        "fever": 0.3,
+        "sore_throat": 0.2,
+        "fatigue": 0.5
+      },
+      "risk_factors": {
+        "fuma": 0.15
+      }
     },
     {
-      "id": "AS",
-      "name": "Asma",
-      "prior": 0.08,
-      "symptoms": [
-        "falta_aire",
-        "sibilancias",
-        "tos"
-      ]
+      "id": "RC",
+      "name": "Resfriado común",
+      "prior": 0.25,
+      "symptom_likelihood": {
+        "cough": 0.6,
+        "fever": 0.2,
+        "sore_throat": 0.5,
+        "fatigue": 0.4
+      },
+      "risk_factors": {}
     },
     {
-      "id": "NE",
-      "name": "Neumonía",
-      "prior": 0.06,
-      "symptoms": [
-        "fiebre",
-        "tos",
-        "falta_aire",
-        "dolor_pecho"
-      ]
+      "id": "GR",
+      "name": "Gripe",
+      "prior": 0.2,
+      "symptom_likelihood": {
+        "cough": 0.7,
+        "fever": 0.6,
+        "sore_throat": 0.4,
+        "fatigue": 0.6,
+        "headache": 0.5
+      },
+      "risk_factors": {}
     },
     {
       "id": "CO",
       "name": "COVID-19",
-      "prior": 0.06,
-      "symptoms": [
-        "fiebre",
-        "tos",
-        "fatiga",
-        "perdida_gusto"
-      ]
+      "prior": 0.05,
+      "symptom_likelihood": {
+        "cough": 0.7,
+        "fever": 0.7,
+        "fatigue": 0.8,
+        "shortness_breath": 0.4,
+        "loss_taste": 0.6
+      },
+      "risk_factors": {}
     },
     {
       "id": "AN",
       "name": "Anemia",
-      "prior": 0.02,
-      "symptoms": [
-        "fatiga",
-        "piel_palida",
-        "mareo"
-      ]
+      "prior": 0.05,
+      "symptom_likelihood": {
+        "fatigue": 0.8,
+        "dizziness": 0.6,
+        "pale_skin": 0.5,
+        "shortness_breath": 0.3
+      },
+      "risk_factors": {}
     },
     {
-      "id": "CC",
-      "name": "Cáncer de pulmón",
-      "prior": 0.02,
-      "symptoms": [
-        "tos",
-        "dolor_pecho",
-        "fatiga",
-        "perdida_peso"
-      ]
+      "id": "AS",
+      "name": "Asma",
+      "prior": 0.05,
+      "symptom_likelihood": {
+        "cough": 0.5,
+        "shortness_breath": 0.9,
+        "wheezing": 0.8,
+        "chest_pain": 0.3
+      },
+      "risk_factors": {}
+    },
+    {
+      "id": "AL",
+      "name": "Alergia",
+      "prior": 0.15,
+      "symptom_likelihood": {
+        "cough": 0.4,
+        "sore_throat": 0.3,
+        "sneezing": 0.6,
+        "itchy_eyes": 0.5
+      },
+      "risk_factors": {}
     }
   ]
 }

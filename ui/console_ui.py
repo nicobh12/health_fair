@@ -7,6 +7,27 @@ from logic.utils import clear_console
 init(autoreset=True)
 
 class ConsoleUI:
+    def __init__(self, data_path, symptom_map, debug=False):
+        from colorama import Fore, Style
+        from os import system, name
+        self.Fore, self.Style = Fore, Style
+        self.system, self.name = system, name
+        self.engine = None
+        self.points = 100
+        self.debug = debug
+        self._clear()
+
+    def _clear(self):
+        self.system('cls' if self.name == 'nt' else 'clear')
+
+    def _print_symptoms(self, confirmed, denied):
+        print(f"Síntomas confirmados:")
+        for s in confirmed:
+            print(f"  {self.Fore.GREEN}✅ {s}{self.Style.RESET_ALL}")
+        for s in denied:
+            print(f"  {self.Fore.RED}❌ {s}{self.Style.RESET_ALL}")
+        print()
+
     def __init__(self, data_path: str, symptom_map_path: str, debug: bool = False):
         self.dataset = Dataset(data_path, symptom_map_path)
         self.display_map = self.dataset.display_to_key()
