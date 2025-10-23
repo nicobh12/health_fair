@@ -1,3 +1,7 @@
+Diapositivas:
+
+https://docs.google.com/presentation/d/1Fxznf-KsAobdd3rDgwGNmdcKe78tzWAbCWPtiiTovH4/edit?usp=sharing
+
 Introducción
 
 Health Fair es un juego-simulador donde tú asumes el papel de diagnóstico: debes identificar la enfermedad oculta de un paciente haciendo preguntas sobre sus síntomas. El juego está pensado para usarse en consola (ejecutable) y ofrece una experiencia basada en preguntas y respuestas hasta que encuentres la enfermedad correcta.
