@@ -5,11 +5,11 @@
       "name": "Cáncer de pulmón",
       "prior": 0.03,
       "symptom_likelihood": {
-        "tos": 0.8,
-        "fiebre": 0.15,
-        "dolor_garganta": 0.1,
-        "fatiga": 0.7,
-        "dolor_pecho": 0.6
+        "cough": 0.8,
+        "fever": 0.15,
+        "sore_throat": 0.1,
+        "fatigue": 0.7,
+        "chest_pain": 0.6
       },
       "risk_factors": {
         "fuma": 0.25
@@ -20,10 +20,10 @@
       "name": "Neumonía",
       "prior": 0.07,
       "symptom_likelihood": {
-        "tos": 0.9,
-        "fiebre": 0.8,
-        "fatiga": 0.7,
-        "falta_aire": 0.6
+        "cough": 0.9,
+        "fever": 0.8,
+        "fatigue": 0.7,
+        "shortness_breath": 0.6
       },
       "risk_factors": {
         "fuma": 0.1
@@ -34,10 +34,10 @@
       "name": "Bronquitis",
       "prior": 0.1,
       "symptom_likelihood": {
-        "tos": 0.8,
-        "fiebre": 0.3,
-        "dolor_garganta": 0.2,
-        "fatiga": 0.5
+        "cough": 0.8,
+        "fever": 0.3,
+        "sore_throat": 0.2,
+        "fatigue": 0.5
       },
       "risk_factors": {
         "fuma": 0.15
@@ -48,10 +48,10 @@
       "name": "Resfriado común",
       "prior": 0.25,
       "symptom_likelihood": {
-        "tos": 0.6,
-        "fiebre": 0.2,
-        "dolor_garganta": 0.5,
-        "fatiga": 0.4
+        "cough": 0.6,
+        "fever": 0.2,
+        "sore_throat": 0.5,
+        "fatigue": 0.4
       },
       "risk_factors": {}
     },
@@ -60,11 +60,11 @@
       "name": "Gripe",
       "prior": 0.2,
       "symptom_likelihood": {
-        "tos": 0.7,
-        "fiebre": 0.6,
-        "dolor_garganta": 0.4,
-        "fatiga": 0.6,
-        "dolor_cabeza": 0.5
+        "cough": 0.7,
+        "fever": 0.6,
+        "sore_throat": 0.4,
+        "fatigue": 0.6,
+        "headache": 0.5
       },
       "risk_factors": {}
     },
@@ -73,11 +73,11 @@
       "name": "COVID-19",
       "prior": 0.05,
       "symptom_likelihood": {
-        "tos": 0.7,
-        "fiebre": 0.7,
-        "fatiga": 0.8,
-        "falta_aire": 0.4,
-        "perdida_gusto": 0.6
+        "cough": 0.7,
+        "fever": 0.7,
+        "fatigue": 0.8,
+        "shortness_breath": 0.4,
+        "loss_taste": 0.6
       },
       "risk_factors": {}
     },
@@ -86,10 +86,10 @@
       "name": "Anemia",
       "prior": 0.05,
       "symptom_likelihood": {
-        "fatiga": 0.8,
-        "mareo": 0.6,
-        "piel_palida": 0.5,
-        "falta_aire": 0.3
+        "fatigue": 0.8,
+        "dizziness": 0.6,
+        "pale_skin": 0.5,
+        "shortness_breath": 0.3
       },
       "risk_factors": {}
     },
@@ -98,10 +98,10 @@
       "name": "Asma",
       "prior": 0.05,
       "symptom_likelihood": {
-        "tos": 0.5,
-        "falta_aire": 0.9,
-        "sibilancias": 0.8,
-        "dolor_pecho": 0.3
+        "cough": 0.5,
+        "shortness_breath": 0.9,
+        "wheezing": 0.8,
+        "chest_pain": 0.3
       },
       "risk_factors": {}
     },
@@ -110,10 +110,10 @@
       "name": "Alergia",
       "prior": 0.15,
       "symptom_likelihood": {
-        "tos": 0.4,
-        "dolor_garganta": 0.3,
-        "estornudos": 0.6,
-        "ojos_picor": 0.5
+        "cough": 0.4,
+        "sore_throat": 0.3,
+        "sneezing": 0.6,
+        "itchy_eyes": 0.5
       },
       "risk_factors": {}
     }
