@@ -1,0 +1,106 @@
+{
+  "diseases": [
+    {
+      "id": "RC",
+      "name": "Resfriado común",
+      "prior": 0.25,
+      "symptom_likelihood": {
+        "tos": 0.6,
+        "fiebre": 0.2,
+        "dolor_garganta": 0.5,
+        "fatiga": 0.4
+      }
+    },
+    {
+      "id": "GR",
+      "name": "Gripe",
+      "prior": 0.2,
+      "symptom_likelihood": {
+        "tos": 0.7,
+        "fiebre": 0.6,
+        "dolor_garganta": 0.4,
+        "fatiga": 0.6,
+        "dolor_cabeza": 0.5
+      }
+    },
+    {
+      "id": "AL",
+      "name": "Alergia",
+      "prior": 0.15,
+      "symptom_likelihood": {
+        "tos": 0.4,
+        "dolor_garganta": 0.3,
+        "estornudos": 0.6,
+        "ojos_picor": 0.5
+      }
+    },
+    {
+      "id": "BR",
+      "name": "Bronquitis",
+      "prior": 0.1,
+      "symptom_likelihood": {
+        "tos": 0.85,
+        "fiebre": 0.35,
+        "dolor_garganta": 0.25,
+        "fatiga": 0.5
+      }
+    },
+    {
+      "id": "AS",
+      "name": "Asma",
+      "prior": 0.1,
+      "symptom_likelihood": {
+        "tos": 0.5,
+        "falta_aire": 0.9,
+        "sibilancias": 0.8,
+        "dolor_pecho": 0.3
+      }
+    },
+    {
+      "id": "NE",
+      "name": "Neumonía",
+      "prior": 0.06,
+      "symptom_likelihood": {
+        "tos": 0.9,
+        "fiebre": 0.8,
+        "fatiga": 0.7,
+        "falta_aire": 0.6
+      }
+    },
+    {
+      "id": "CO",
+      "name": "COVID-19",
+      "prior": 0.06,
+      "symptom_likelihood": {
+        "tos": 0.7,
+        "fiebre": 0.7,
+        "fatiga": 0.8,
+        "falta_aire": 0.4,
+        "perdida_gusto": 0.6
+      }
+    },
+    {
+      "id": "AN",
+      "name": "Anemia",
+      "prior": 0.02,
+      "symptom_likelihood": {
+        "fatiga": 0.8,
+        "mareo": 0.6,
+        "piel_palida": 0.5,
+        "falta_aire": 0.3
+      }
+    },
+    {
+      "id": "CC",
+      "name": "Cáncer de pulmón",
+      "prior": 0.02,
+      "symptom_likelihood": {
+        "tos": 0.8,
+        "fatiga": 0.7,
+        "dolor_pecho": 0.6,
+        "perdida_peso": 0.5,
+        "sangre_tos": 0.4
+      }
+    }
+  ]
+}

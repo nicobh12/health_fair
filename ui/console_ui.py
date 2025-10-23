@@ -1,116 +1,101 @@
-"""console_ui.py
-Interfaz por consola usando colorama para mejorar lectura.
-"""
-from typing import List
+"""console_ui.py - consola con debug opcional que muestra síntomas reales."""
+import os, json, time
+from colorama import init, Fore, Style
 from logic.dataset import Dataset
-from logic.game_engine import GameEngine
-import os, json
-try:
-    from colorama import init, Fore, Style
-except ImportError:
-    # fallback no-color
-    class _Fake:
-        def __getattr__(self, name):
-            return ''
-    init = lambda **k: None
-    Fore = Style = _Fake()
+from logic.utils import clear_console
+
 init(autoreset=True)
 
 class ConsoleUI:
-    def __init__(self, data_path: str):
-        self.dataset = Dataset(data_path)
-        self.engine = GameEngine(self.dataset)
+    def __init__(self, data_path: str, symptom_map_path: str, debug: bool = False):
+        self.dataset = Dataset(data_path, symptom_map_path)
+        self.display_map = self.dataset.display_to_key()
+        self.key_to_display = {v:k for k,v in self.display_map.items()}
+        self.engine = __import__('logic.game_engine', fromlist=['']).GameEngine(self.dataset, force_all_symptoms=True)
+        self.debug = debug
 
-    def _print_header(self, text: str):
-        print(Fore.CYAN + Style.BRIGHT + text + Style.RESET_ALL)
+    def _header(self):
+        clear_console()
+        print(Fore.CYAN + Style.BRIGHT + '=== HEALTH FAIR — SIMULADOR DE DIAGNÓSTICO ===' + Style.RESET_ALL)
 
-    def main_loop(self):
-        self._print_header("=== Health Fair — Simulador de diagnóstico médico ===\n")
-        playing = True
-        while playing:
+    def run(self):
+        while True:
             self.engine.reset_case()
+            self._header()
             patient = self.engine.patient
-            print(Fore.YELLOW + f"Nuevo paciente ha llegado. Reporta inicialmente: {', '.join(patient.true_symptoms)}" + Style.RESET_ALL)
-            rounds = 0
+            if self.debug:
+                print(Fore.YELLOW + f"[DEBUG] Enfermedad real: {patient.true_disease.name}" + Style.RESET_ALL)
+                print(Fore.YELLOW + f"[DEBUG] Síntomas verdaderos: {', '.join(patient.true_symptoms)}" + Style.RESET_ALL)
             while True:
-                print('\n' + Fore.MAGENTA + "Probabilidades actuales:" + Style.RESET_ALL)
-                for k, v in sorted(self.engine.belief.items(), key=lambda x: -x[1])[:10]:
+                print('\nProbabilidades actuales:')
+                for k, v in sorted(self.engine.belief.items(), key=lambda x: -x[1]):
                     d = self.dataset.get_by_id(k)
-                    print(f" {Fore.WHITE}({d.id}) {d.name}: {Fore.GREEN}{v:.3f}{Style.RESET_ALL}")
-
-                print('\n' + Fore.BLUE + 'Acciones disponibles:' + Style.RESET_ALL)
+                    color = Fore.GREEN if v>=0.5 else (Fore.YELLOW if v>=0.2 else Fore.RED)
+                    print(f" {color}({d.id}) {d.name}: {v:.3f}{Style.RESET_ALL}")
+                print('\nAcciones:')
                 print('1) Preguntar por síntoma')
                 print('2) Hacer diagnóstico')
-                print('3) Mostrar perfil del paciente')
+                print('3) Mostrar perfil del paciente (abrir historia familiar)')
                 print('4) Descartar enfermedad')
-                print('0) Salir del juego')
+                print('0) Salir')
                 opt = input('> ').strip()
-
+                if opt == '0':
+                    clear_console()
+                    print('Gracias por jugar!')
+                    return
                 if opt == '1':
                     choices = self.engine.suggest_symptoms(3)
-                    if not choices:
-                        print('No hay síntomas disponibles para preguntar.')
+                    unique = []
+                    for k in choices:
+                        if k not in unique:
+                            unique.append(k)
+                    if not unique:
+                        input('No hay síntomas disponibles. Presiona Enter...')
                         continue
-                    print('\n' + Fore.YELLOW + 'Opciones de síntomas para preguntar:' + Style.RESET_ALL)
-                    for i, s in enumerate(choices, 1):
-                        print(f"{i}) {s}")
+                    print('\nSíntomas para preguntar:')
+                    for i, key in enumerate(unique,1):
+                        print(f"{i}) {self.key_to_display.get(key, key)}")
                     sel = input('> ').strip()
-                    if not sel.isdigit() or not (1 <= int(sel) <= len(choices)):
-                        print('Opción inválida.')
+                    if not sel.isdigit() or int(sel) not in range(1, len(unique)+1):
                         continue
-                    s = choices[int(sel) - 1]
-                    res = self.engine.ask_symptom(s)
-                    ans_text = res['answer']
+                    chosen = unique[int(sel)-1]
+                    res = self.engine.ask_symptom(chosen)
                     if res['reported_bool']:
-                        print(Fore.GREEN + f"Paciente responde: {ans_text}" + Style.RESET_ALL)
+                        print(Fore.GREEN + f"Paciente responde: {res['answer']}" + Style.RESET_ALL)
                     else:
-                        print(Fore.RED + f"Paciente responde: {ans_text}" + Style.RESET_ALL)
-                    rounds += 1
-
+                        print(Fore.RED + f"Paciente responde: {res['answer']}" + Style.RESET_ALL)
+                    if self.debug:
+                        print('\n[DEBUG] confirmed:', self.engine.patient.confirmed_symptoms)
+                        print('[DEBUG] negated:', self.engine.patient.negated_symptoms)
+                        print('[DEBUG] belief:', res['belief'])
+                    input('\nPresiona Enter para continuar...')
+                    self._header()
                 elif opt == '2':
                     print('\nEnfermedades no descartadas:')
-                    for d in self.dataset.diseases:
-                        if self.engine.belief.get(d.id, 0) > 0:
-                            print(f" ({d.id}) {d.name}")
-                    choice = input('Escribe el código (ej. CC): ').strip().upper()
-                    if choice not in self.engine.belief:
-                        print('Código inválido.')
-                        continue
-                    correct = self.engine.make_diagnosis(choice)
-                    if correct:
-                        print(Fore.GREEN + '\n✅ Diagnóstico correcto!\n' + Style.RESET_ALL)
+                    for k in self.engine.belief.keys():
+                        print(f" ({k}) {self.dataset.get_by_id(k).name}")
+                    code = input('\nCódigo: ').strip().upper()
+                    ok = self.engine.make_diagnosis(code)
+                    if ok:
+                        print(Fore.GREEN + '\n✅ Diagnóstico correcto!' + Style.RESET_ALL)
                     else:
-                        true = self.engine.patient.true_disease
-                        print(Fore.RED + f'\n❌ Incorrecto. La enfermedad real era: {true.name}\n' + Style.RESET_ALL)
+                        print(Fore.RED + f"\n❌ Incorrecto. La enfermedad real era: {self.engine.patient.true_disease.name}" + Style.RESET_ALL)
+                    input('\nPresiona Enter...')
                     break
-
                 elif opt == '3':
-                    p = self.engine.patient.profile
-                    print('\n' + Fore.CYAN + 'Perfil del paciente:' + Style.RESET_ALL)
-                    for k, v in p.items():
-                        print(f" - {k.capitalize()}: {v}")
-
+                    prof = self.engine.open_family_history()
+                    print('\nHistoria familiar:')
+                    for k,v in prof.items():
+                        print(f" - {k}: {v}")
+                    input('\nPresiona Enter...')
                 elif opt == '4':
-                    print('\nEnfermedades no descartadas:')
-                    for d in self.dataset.diseases:
-                        if self.engine.belief.get(d.id, 0) > 0:
-                            print(f" ({d.id}) {d.name}")
-                    to_remove = input('Código de enfermedad a descartar: ').strip().upper()
-                    if to_remove in self.engine.belief:
-                        self.engine.discard_disease(to_remove)
-                        print(Fore.YELLOW + f"{to_remove} descartada del diagnóstico." + Style.RESET_ALL)
-                    else:
-                        print('Código no válido.')
-
-                elif opt == '0':
-                    playing = False
-                    break
+                    print('\nEnfermedades actuales:')
+                    for k in self.engine.belief.keys():
+                        print(f" ({k}) {self.dataset.get_by_id(k).name}")
+                    d = input('\nCódigo a descartar: ').strip().upper()
+                    self.engine.discard_disease(d)
+                    print(Fore.YELLOW + 'Enfermedad descartada.' + Style.RESET_ALL)
+                    input('\nPresiona Enter...')
                 else:
-                    print('Opción no válida.')
-
-            if not playing:
-                break
-            cont = input('\n¿Jugar otro caso? (s/n): ').strip().lower()
-            if cont != 's':
-                break
-        print('\n' + Fore.CYAN + 'Gracias por jugar Health Fair!' + Style.RESET_ALL)
+                    input('Opción inválida. Presiona Enter...')
+                self._header()

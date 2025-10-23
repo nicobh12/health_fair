@@ -1,85 +1,81 @@
 """probability_engine.py
-Módulo con todos los cálculos probabilísticos. Cada función incluye un comentario
-indicando qué concepto estadístico implementa.
+Robust Bayes + match_ratio weighting + additive blending to avoid underflow.
 """
 from typing import Dict, List
+import math
 
-# -----------------------------
-# Conceptos básicos / Teorema de Laplace
-# -----------------------------
-def laplace_probability(favorable: int, possible: int) -> float:
-    """P(A) = casos favorables / casos posibles (Teorema de Laplace)"""
-    if possible <= 0:
-        return 0.0
-    return favorable / possible
+EPS = 1e-12
+MIN_LIKE = 1e-4
 
-# -----------------------------
-# Probabilidad condicionada
-# -----------------------------
-def conditional(p_a_and_b: float, p_b: float) -> float:
-    """P(A|B) = P(A ∧ B) / P(B) (Probabilidad condicionada)"""
-    if p_b == 0:
-        return 0.0
-    return p_a_and_b / p_b
+# Critical symptoms per disease
+CRITICAL = {
+    'CC': ['sangre_tos', 'perdida_peso'],
+    'NE': ['fiebre', 'falta_aire'],
+    'CO': ['perdida_gusto', 'fiebre']
+}
 
-# -----------------------------
-# Probabilidad total
-# -----------------------------
-def total_probability(p_b_given_a: Dict[str, float], p_a: Dict[str, float]) -> float:
-    """P(B) = Σ P(B|A_i) P(A_i) (Probabilidad total)"""
-    s = 0.0
-    for a, pa in p_a.items():
-        s += p_b_given_a.get(a, 0.0) * pa
-    return s
+def safe_log(x: float) -> float:
+    return math.log(max(x, EPS))
 
-# -----------------------------
-# Teorema de Bayes
-# -----------------------------
-def bayes_update(priors: Dict[str, float], likelihoods: Dict[str, float]) -> Dict[str, float]:
-    """Aplica Bayes: P(A_i|B) = P(B|A_i)*P(A_i) / P(B)"""
-    # P(B)
-    p_b = total_probability(likelihoods, priors)
-    post = {}
-    for h, p in priors.items():
-        post[h] = (likelihoods.get(h, 0.0) * p) / p_b if p_b > 0 else 0.0
-    # Normalizar por si hay errores numéricos
-    total = sum(post.values())
-    if total > 0:
-        for k in post:
-            post[k] = post[k] / total
-    return post
+def logsumexp(vals: List[float]) -> float:
+    m = max(vals)
+    s = sum(math.exp(v - m) for v in vals)
+    return m + math.log(s)
 
-# -----------------------------
-# Enfoque frecuentista
-# -----------------------------
-def frequentist(successes: int, trials: int) -> float:
-    """Estimación por frecuencia relativa: P(A) ≈ n(A)/N"""
-    if trials <= 0:
-        return 0.0
-    return successes / trials
+def bayes_with_match(priors: Dict[str, float],
+                     confirmed: List[str],
+                     negated: List[str],
+                     symptom_map: Dict[str, Dict[str, float]],
+                     alpha: float = 5.0,
+                     smoother: float = 0.08,
+                     min_floor: float = 1e-10) -> Dict[str, float]:
+    ids = list(priors.keys())
+    # match ratio: confirmed symptoms matching disease / total disease symptoms
+    match_ratio = {}
+    for h in ids:
+        total_syms = max(len(symptom_map.get(h, {})), 1)
+        matches = sum(1 for s in confirmed if s in symptom_map.get(h, {}))
+        match_ratio[h] = matches / total_syms
 
-# -----------------------------
-# Función de actualización que usa lo anterior
-# -----------------------------
-def update_with_symptom(priors: Dict[str, float],
-                        symptom: str,
-                        has_symptom: bool,
-                        disease_symptom_map: Dict[str, Dict[str, float]]) -> Dict[str, float]:
-    """Recalcula las probabilidades de todas las enfermedades dado un nuevo síntoma.
+    # log-bayes part
+    log_prior = {h: safe_log(priors.get(h, 0.0)) for h in ids}
+    log_like = {h: 0.0 for h in ids}
+    for s in confirmed:
+        for h in ids:
+            p = symptom_map.get(h, {}).get(s, MIN_LIKE)
+            p = max(p, MIN_LIKE)
+            log_like[h] += safe_log(p)
+    for s in negated:
+        for h in ids:
+            p = symptom_map.get(h, {}).get(s, MIN_LIKE)
+            p = min(max(p, MIN_LIKE), 1 - 1e-9)
+            log_like[h] += safe_log(1.0 - p)
 
-    Implementa:
-    - Probabilidad condicionada a través de modelar P(symptom|disease)
-    - Probabilidad total para normalizar y calcular P(symptom)
-    - Teorema de Bayes para obtener las posteriors
-    """
-    # Construimos P(E | H) para cada hipótesis H (enfermedad)
-    p_e_given_h = {}
-    for h in priors:
-        p = disease_symptom_map.get(h, {}).get(symptom, 0.01)
-        # si el paciente NO tiene el síntoma, usamos 1 - P(symptom|h)
-        p_e_given_h[h] = p if has_symptom else (1 - p)
+    log_post_raw = [log_prior[h] + log_like[h] for h in ids]
+    lse = logsumexp(log_post_raw)
+    bayes_post = {h: math.exp((log_prior[h] + log_like[h]) - lse) for h in ids}
 
-    # Aplicamos Bayes usando la función bayes_update (que internamente usa probabilidad total)
-    new_post = bayes_update(priors, p_e_given_h)
+    # additive blending: factor = 1 + alpha*match_ratio + smoother
+    blended = {}
+    for h in ids:
+        factor = 1.0 + alpha * match_ratio.get(h, 0.0) + smoother
+        blended_val = bayes_post.get(h, 0.0) * factor
+        blended[h] = max(blended_val, min_floor)
 
-    return new_post
+    # critical symptom penalty
+    for h in ids:
+        crits = CRITICAL.get(h, [])
+        if crits:
+            any_confirmed = any(c in confirmed for c in crits)
+            if not any_confirmed:
+                blended[h] *= 0.2
+
+    total = sum(blended.values())
+    if total <= 0 or any(math.isnan(v) for v in blended.values()):
+        s = sum(priors.values())
+        if s > 0:
+            return {k: v/s for k, v in priors.items()}
+        else:
+            n = len(priors) or 1
+            return {k: 1.0/n for k in priors}
+    return {k: v/total for k, v in blended.items()}

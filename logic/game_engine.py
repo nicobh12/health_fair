@@ -1,122 +1,122 @@
-"""game_engine.py
-Motor del juego: genera pacientes, mantiene listas de síntomas, llama al probability_engine
-"""
+"""game_engine.py - coherent patients with all disease symptoms present."""
 import random
 from typing import Dict, Any, List, Tuple
 from .dataset import Dataset, Disease
-from .probability_engine import update_with_symptom
+from .probability_engine import bayes_with_match
 
 class Patient:
-    def __init__(self, true_disease: Disease):
+    def __init__(self, true_disease: Disease, force_all_symptoms: bool = True):
         self.true_disease = true_disease
         self.profile = self._generate_profile()
-        # sintomas que el paciente efectivamente tiene (usado para respuestas verdaderas)
-        self.true_symptoms = self._sample_true_symptoms()
-        # symptoms confirmed by asking (observed yes)
+        # If force_all_symptoms: patient has all symptoms where likelihood>0
+        if force_all_symptoms:
+            self.true_symptoms = [s for s,v in true_disease.symptom_likelihood.items() if v>0]
+        else:
+            # fallback sampling (not used in v8)
+            self.true_symptoms = [s for s,v in true_disease.symptom_likelihood.items() if random.random() < v]
         self.confirmed_symptoms: List[str] = []
-        # symptom bank available to ask (initially all symptoms)
+        self.negated_symptoms: List[str] = []
         self.symptom_bank: List[str] = []
-        self.confidence = round(random.uniform(0.6, 0.95), 2)
+        self.confidence = round(random.uniform(0.8, 0.98), 2)
+        self.family_history_opened = False
 
     def _generate_profile(self) -> Dict[str, Any]:
-        father = random.choice(["Ninguna", "Cáncer de pulmón", "Asma", "Anemia"])
-        mother = random.choice(["Ninguna", "Alergia", "Anemia", "Bronquitis"])
+        father = random.choice(["Ninguna", "Cáncer de pulmón", "Asma", "Anemia"]).capitalize()
+        mother = random.choice(["Ninguna", "Alergia", "Anemia", "Bronquitis"]).capitalize()
         dieta = random.choice(["omnivoro", "vegetariano", "vegano"])
         fuma = random.choice(["sí", "no"])
         return {"padre": father, "madre": mother, "dieta": dieta, "fuma": fuma}
 
-    def _sample_true_symptoms(self) -> List[str]:
-        # sample symptoms from the disease likelihoods (stochastic)
-        items = list(self.true_disease.symptom_likelihood.items())
-        names = [k for k, _ in items]
-        weights = [v for _, v in items]
-        if not names:
-            return []
-        total = sum(weights)
-        probs = [w/total for w in weights] if total > 0 else [1/len(names)]*len(names)
-        k = 1 if random.random() < 0.7 else random.randint(1, min(3, len(names)))
-        chosen = random.choices(names, probs, k=k)
-        return list(set(chosen))
-
     def prepare_symptom_bank(self, all_symptoms: List[str]):
-        # bank starts as all symptoms minus those already in true_symptoms
         self.symptom_bank = [s for s in all_symptoms if s not in self.true_symptoms]
 
     def answer_question(self, symptom: str) -> Tuple[str, bool]:
-        """Return ('sí'/'no', reported_bool). Report may be noisy depending on confidence."""
-        # determine ground truth
         has = symptom in self.true_symptoms
-        # truthfulness sampling
         truthful = random.random() < self.confidence
         if truthful:
             reported = has
         else:
-            # lies occasionally, or mistakes
+            # occasional lie/misreport
             reported = not has if random.random() < 0.9 else has
-        # if reported yes and it's new, add to confirmed symptoms
+        # update observed lists
         if reported and symptom not in self.confirmed_symptoms:
             self.confirmed_symptoms.append(symptom)
-        # remove symptom from bank so it cannot be asked again
+            if symptom in self.negated_symptoms:
+                self.negated_symptoms.remove(symptom)
+        if (not reported) and symptom not in self.negated_symptoms:
+            self.negated_symptoms.append(symptom)
+            if symptom in self.confirmed_symptoms:
+                self.confirmed_symptoms.remove(symptom)
         if symptom in self.symptom_bank:
             self.symptom_bank.remove(symptom)
         return ("sí" if reported else "no"), reported
 
 class GameEngine:
-    def __init__(self, dataset: Dataset):
+    def __init__(self, dataset: Dataset, force_all_symptoms: bool = True):
         self.dataset = dataset
+        self.force_all_symptoms = force_all_symptoms
         self.reset_case()
+
+    def _generate_patient(self) -> Patient:
+        priors = self.dataset.priors()
+        ids = list(priors.keys())
+        chosen = random.choices(ids, weights=[priors[i] for i in ids], k=1)[0]
+        true_disease = self.dataset.get_by_id(chosen)
+        patient = Patient(true_disease, force_all_symptoms=self.force_all_symptoms)
+        patient.prepare_symptom_bank(self.dataset.all_symptoms())
+        return patient
 
     def reset_case(self):
         self.priors = self.dataset.priors()
         self.patient = self._generate_patient()
-        # initialize belief distribution as priors
         self.belief = dict(self.priors)
-        # prepare symptom bank for the patient
-        all_symptoms = self.dataset.all_symptoms()
-        self.patient.prepare_symptom_bank(all_symptoms)
-
-    def _generate_patient(self) -> Patient:
-        ids = list(self.priors.keys())
-        probs = [self.priors[i] for i in ids]
-        true_id = random.choices(ids, probs, k=1)[0]
-        true_disease = self.dataset.get_by_id(true_id)
-        return Patient(true_disease)
 
     def ask_symptom(self, symptom: str) -> Dict[str, Any]:
-        # patient answers
         ans, reported = self.patient.answer_question(symptom)
-        # recompute probabilities for ALL diseases after this observation
-        # Here: probability_engine.update_with_symptom implements Bayes + prob. total + condicionada
         disease_map = {d.id: d.symptom_likelihood for d in self.dataset.diseases}
-        self.belief = update_with_symptom(self.belief, symptom, bool(reported), disease_map)
+        # Recalculate posterior using both confirmed and negated symptoms
+        self.belief = bayes_with_match(self.belief, self.patient.confirmed_symptoms, self.patient.negated_symptoms, disease_map)
         return {'question': symptom, 'answer': ans, 'reported_bool': reported, 'belief': dict(self.belief)}
 
+    def open_family_history(self) -> Dict[str, str]:
+        if not self.patient.family_history_opened:
+            self.patient.family_history_opened = True
+            for parent in ['padre','madre']:
+                val = self.patient.profile.get(parent)
+                if val and val != 'Ninguna':
+                    for d in self.dataset.diseases:
+                        if val.lower() in d.name.lower():
+                            self.belief[d.id] *= 1.5
+            total = sum(self.belief.values())
+            if total > 0:
+                for k in self.belief:
+                    self.belief[k] /= total
+        return self.patient.profile
+
     def suggest_symptoms(self, n: int = 3) -> List[str]:
-        """Return up to n symptoms: one likely, one medium, one unlikely (based on current belief)."""
         ranked = sorted(self.belief.items(), key=lambda x: -x[1])
         if not ranked:
             return []
         ids = [r[0] for r in ranked]
-        likely = self.dataset.get_by_id(ids[0])
-        mid = self.dataset.get_by_id(ids[min(len(ids)//2, len(ids)-1)])
-        unlikely = self.dataset.get_by_id(ids[-1])
-        # choose top symptom from each disease
-        options = []
-        for d in [likely, mid, unlikely]:
+        candidates = []
+        picks = [0, min(len(ids)//2, len(ids)-1), -1]
+        for idx in picks:
+            d = self.dataset.get_by_id(ids[idx])
             if d.symptom_likelihood:
                 top = max(d.symptom_likelihood.items(), key=lambda x: x[1])[0]
-                options.append(top)
-        # ensure options are available in symptom_bank; if not, add other symptoms
-        available = [s for s in options if s in self.patient.symptom_bank]
-        # fill with random symptoms if needed
-        all_symptoms = self.dataset.all_symptoms()
-        random.shuffle(all_symptoms)
-        for s in all_symptoms:
-            if len(available) >= n:
+                candidates.append(top)
+        unique = []
+        for s in candidates:
+            if s in self.patient.symptom_bank and s not in unique:
+                unique.append(s)
+        all_s = self.dataset.all_symptoms()
+        random.shuffle(all_s)
+        for s in all_s:
+            if len(unique) >= n:
                 break
-            if s not in available and s in self.patient.symptom_bank:
-                available.append(s)
-        return available[:n]
+            if s in self.patient.symptom_bank and s not in unique:
+                unique.append(s)
+        return unique[:n]
 
     def discard_disease(self, disease_id: str):
         if disease_id in self.belief:

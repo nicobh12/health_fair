@@ -1,13 +1,16 @@
-"""main.py
-Entry point to run the Health Fair console game.
-"""
-import os
+"""main.py - entry point for Health Fair v8"""
+import os, argparse
 from ui.console_ui import ConsoleUI
 
 def main():
-    data_path = os.path.join(os.path.dirname(__file__), 'data', 'diseases.json')
-    ui = ConsoleUI(data_path)
-    ui.main_loop()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--debug', action='store_true')
+    args = parser.parse_args()
+    base = os.path.dirname(__file__)
+    data = os.path.join(base, 'data', 'dataset.json')
+    symptom_map = os.path.join(base, 'data', 'symptom_map.json')
+    ui = ConsoleUI(data, symptom_map, debug=args.debug)
+    ui.run()
 
 if __name__ == '__main__':
     main()
