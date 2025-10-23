@@ -1,0 +1,10 @@
+codigo,nombre,prior,sintomas
+RC,Resfriado común,0.35,estornudos,tos,congestión,fiebre
+GR,Gripe,0.20,fiebre,tos,malestar,fatiga,dolor muscular
+AL,Alergia,0.15,estornudos,picor en los ojos,congestión
+BR,Bronquitis,0.10,tos,fatiga,dificultad para respirar
+AS,Asma,0.08,dificultad para respirar,tos,sibilancias
+AN,Anemia,0.05,fatiga,palidez,mareos
+CO,COVID-19,0.04,fiebre,tos,perdida del gusto,fatiga
+NE,Neumonía,0.02,fiebre,tos,dificultad para respirar
+CC,Cáncer de pulmón,0.01,tos,fatiga,dolor torácico
