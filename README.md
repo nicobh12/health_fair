@@ -8,7 +8,7 @@
 2. Instala pygame si no está instalado:
 
    ```bash
-   pip instalar pygame
+   pip install pygame
 
 Notas:
 
