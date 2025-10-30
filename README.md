@@ -2,6 +2,10 @@
 
 ![Manual](Manual.jpg)
 
+Diapositivas
+
+https://docs.google.com/presentation/d/1Fxznf-KsAobdd3rDgwGNmdcKe78tzWAbCWPtiiTovH4/edit?usp=sharing
+
 ## Instrucciones rápidas:
 
 1. Asegúrese de tener Python 3.8+ instalado.
